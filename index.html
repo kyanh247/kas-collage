@@ -139,6 +139,12 @@
   .switch.on::after { transform: translateX(18px); }
   .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 
+  /* ---------- máy tính / iPad: thu gọn thành khung cỡ điện thoại ở giữa màn hình ---------- */
+  @media (min-width: 640px) {
+    html { background: var(--cream-2); }
+    body { width: 460px; margin: 0 auto; box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgba(42, 36, 32, .12); }
+    .mbox { max-width: 460px; margin: 0 auto; }
+  }
   /* ---------- xuất ảnh ---------- */
   .modal { position: fixed; inset: 0; z-index: 60; background: rgba(26, 22, 20, .55); display: none; align-items: flex-end; }
   .modal.open { display: flex; }
