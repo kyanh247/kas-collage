@@ -872,16 +872,19 @@
       outUrl = URL.createObjectURL(blob);
       $('#donePv').src = outUrl;
       $('#doneInfo').textContent = `${W} × ${H} px · ${(blob.size / 1048576).toFixed(2)} MB · JPG`;
-      const canShare = !!(navigator.canShare && navigator.canShare({ files: [outFile] }));
-      $('#doneShare').textContent = canShare ? 'Lưu / gửi ảnh' : 'Tải vào Tệp';
-      $('#doneTip').hidden = canShare;
+      const canShare = shareOk([outFile]);
+      $('#doneShare').textContent = canShare ? 'Lưu / gửi ảnh' : isTouch ? 'Tải vào Tệp' : 'Tải ảnh về máy';
+      $('#doneTip').hidden = canShare || !isTouch;
       $('#done').classList.add('open');
     } catch (err) { toast(err.message || 'Không xuất được ảnh'); }
     busy(false);
   };
+  // máy tính (chuột) thì tải thẳng về Downloads; điện thoại / máy tính bảng (chạm) mới mở bảng Lưu ảnh / Chia sẻ
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const shareOk = (files) => isTouch && !!(navigator.canShare && navigator.canShare({ files }));
   $('#doneShare').onclick = async () => {
     if (!outFile) return;
-    if (navigator.canShare && navigator.canShare({ files: [outFile] })) {
+    if (shareOk([outFile])) {
       try { await navigator.share({ files: [outFile] }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
     const a = document.createElement('a'); a.href = outUrl; a.download = outFile.name; document.body.append(a); a.click(); a.remove();
@@ -1002,9 +1005,10 @@
   async function rsSave() {
     const files = rsItems.filter((x) => x.out).map((x) => x.out);
     if (!files.length) return;
-    if (navigator.canShare && navigator.canShare({ files })) {
+    if (shareOk(files)) {
       try { await navigator.share({ files }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
+    if (!isTouch) { rsDownload(files); toast(`Đang tải ${files.length} ảnh về thư mục Downloads`); return; }
     // mở qua wifi (http): iPhone không có bảng "Lưu ảnh" → hiện ảnh để nhấn giữ lưu từng tấm
     rsUrls.forEach((u) => URL.revokeObjectURL(u));
     rsUrls = files.map((f) => URL.createObjectURL(f));
