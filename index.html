@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#faf9f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KAS Collage">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>KAS Collage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* KAS Collage — bản điện thoại: ghép ảnh, chỉnh pixel khung, xuất JPG. Ảnh xử lý ngay trên máy, không gửi đi đâu. */
+  :root {
+    --cream: #faf9f7; --cream-2: #f3efe9; --line: #e6dfd5; --text: #2a2420; --muted: #8b8178;
+    --gold: #b8956e; --gold-dark: #8f6f4d; --esp: #2a2420; --danger: #c0392b;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body { height: 100dvh; }
+  body {
+    background: var(--cream); color: var(--text); font: 14px/1.45 "Be Vietnam Pro", system-ui, sans-serif;
+    display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input { font: inherit; }
+
+  /* ---------- thanh trên ---------- */
+  .top { flex: none; display: flex; align-items: center; gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: .01em; margin-right: auto; }
+  .modes { display: flex; padding: 3px; border-radius: 17px; background: var(--cream-2); }
+  .modes button { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 500; }
+  .modes button.on { background: #fff; color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(42, 36, 32, .12); }
+  .mode { flex: 1; min-height: 0; display: none; flex-direction: column; }
+  .mode.on { display: flex; }
+  body.rs .col-only { display: none !important; }
+
+  /* ---------- thu nhỏ hàng loạt ---------- */
+  .rs-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 12px 12px; position: relative; }
+  .rs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rs-it { position: relative; border-radius: 10px; overflow: hidden; background: var(--cream-2); }
+  .rs-it img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .rs-it .cap { font-size: 10px; color: var(--muted); padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rs-it .cap b { color: var(--text); font-weight: 600; }
+  .rs-it .x { position: absolute; right: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(42, 36, 32, .6); color: #fff; font-size: 14px; line-height: 1; }
+  .rs-it.ok::after { content: '✓'; position: absolute; left: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+  .rs-it.err { outline: 2px solid var(--danger); }
+  .rs-sheet { flex: none; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(42, 36, 32, .07); padding: 4px 14px calc(var(--safe-b) + 10px); }
+  .rs-sheet .acts { display: flex; gap: 8px; margin-top: 6px; }
+  .rs-sheet .acts .btn { flex: 1; height: 44px; justify-content: center; font-size: 14px; border-radius: 22px; }
+  .rs-sheet .field.sm { width: 84px; height: 30px; font-size: 14px; flex: none; }
+  .rs-sum { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
+  .brand i { width: 20px; height: 23px; background: var(--gold); -webkit-mask: url(logo-k.png) center / contain no-repeat; mask: url(logo-k.png) center / contain no-repeat; }
+  .btn { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: #fff; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn.gold { background: var(--esp); border-color: var(--esp); color: var(--cream); }
+  .btn:disabled { opacity: .4; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ---------- khung xem trước ---------- */
+  .stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+  #cv { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; touch-action: none; box-shadow: 0 10px 30px rgba(42, 36, 32, .14); background: #fff; }
+  .empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; }
+  .empty .big { width: 100%; max-width: 300px; aspect-ratio: 4 / 5; border: 1.5px dashed var(--gold); border-radius: 18px; display: grid; place-content: center; gap: 10px; background: var(--cream-2); color: var(--muted); font-size: 13px; }
+  .empty .big b { color: var(--text); font-size: 17px; font-weight: 600; }
+  .empty .big .plus { width: 54px; height: 54px; margin: 0 auto 4px; border-radius: 50%; background: var(--esp); color: var(--cream); display: grid; place-items: center; font-size: 28px; font-weight: 300; }
+  .hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 40px); text-align: center;
+    font-size: 11px; color: #fff; background: rgba(42, 36, 32, .78); padding: 6px 12px; border-radius: 14px; pointer-events: none; transition: opacity .4s; }
+  .hint:empty { display: none; }
+  .cellbar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 4px; padding: 4px; border-radius: 22px;
+    background: rgba(255, 255, 255, .94); box-shadow: 0 6px 20px rgba(42, 36, 32, .18); }
+  .cellbar:empty { display: none; }
+  .cellbar .btn { height: 32px; font-size: 12px; border: 0; background: transparent; padding: 0 10px; }
+  .cellbar .btn:active { background: var(--cream-2); }
+  .ghost { position: fixed; z-index: 50; width: 76px; height: 76px; border-radius: 12px; overflow: hidden; pointer-events: none; transform: translate(-50%, -110%) rotate(-3deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35), 0 0 0 2px var(--gold); display: none; }
+  .ghost img { width: 100%; height: 100%; object-fit: cover; }
+  .ghost.del { box-shadow: 0 10px 30px rgba(0, 0, 0, .35), 0 0 0 2px var(--danger); }
+  .ghost.del::after { content: 'Thả để bỏ'; position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; font-weight: 600; text-align: center; padding: 2px 0; color: #fff; background: rgba(192, 57, 43, .9); }
+
+  /* ---------- bảng chỉnh ---------- */
+  .sheet { flex: none; position: relative; z-index: 5; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(42, 36, 32, .07); padding-bottom: calc(var(--safe-b) + 4px); }
+  .tabs { display: flex; gap: 2px; padding: 6px 8px; }
+  .tabs button { flex: 1; height: 34px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 500; font-size: 12.5px;
+    display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .tabs button svg { width: 16px; height: 16px; }
+  .tabs button.on { background: var(--cream-2); color: var(--text); font-weight: 600; }
+  .panel { display: none; padding: 4px 14px 4px; max-height: 34vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--cream-2); }
+  .sheet.open .panel.on { display: block; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+  .lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; display: flex; justify-content: space-between; }
+  .lbl b { color: var(--gold-dark); letter-spacing: 0; text-transform: none; font-weight: 600; }
+  .scroll { display: flex; gap: 6px; overflow-x: auto; padding: 4px 14px 6px; margin: 0 -14px; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .chip { flex: none; height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid var(--line); background: #fff; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+  .chip.on { border-color: var(--esp); background: var(--esp); color: var(--cream); }
+  .chip.preset { border-color: var(--gold); color: var(--gold-dark); }
+  .chip.preset.on { background: var(--gold); color: #fff; }
+  .num { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: #fff; font-size: 13px; font-weight: 500; }
+  .num.on { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .lay { flex: none; position: relative; width: 48px; height: 60px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--cream-2); padding: 0; overflow: hidden; }
+  .lay.on { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(184, 149, 110, .3); }
+  .lay i { position: absolute; background: #cfc5b8; border: 1.5px solid var(--cream-2); }
+  .lay.on i { background: var(--gold); }
+  .wh { display: grid; grid-template-columns: 1fr 34px 1fr 40px; align-items: end; gap: 6px; margin: 8px 0 6px; }
+  .wh label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .field { width: 100%; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--cream); padding: 0 10px; font-size: 16px; font-weight: 600; color: var(--text); text-align: center; -webkit-user-select: text; user-select: text; }
+  .field:focus { outline: none; border-color: var(--gold); background: #fff; }
+  .ico { width: 34px; height: 36px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; }
+  .ico.on { color: var(--gold-dark); background: rgba(184, 149, 110, .14); }
+  .ico svg { width: 18px; height: 18px; }
+  .ico.sq { width: 40px; border: 1px solid var(--line); background: #fff; color: var(--gold-dark); }
+  .note { font-size: 11px; color: var(--muted); margin: 0 0 4px; }
+  .note.warn { color: var(--danger); }
+  .slider { margin-bottom: 2px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .grid2 .top2 { font-size: 12px; }
+  .slider .top2 { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+  .slider .top2 b { color: var(--text); font-weight: 600; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(var(--gold), var(--gold)) 0 / var(--p, 50%) 100% no-repeat, var(--line); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10px; border-radius: 50%; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0, 0, 0, .15); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+  input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--gold); }
+  input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 1px solid var(--line); }
+  .sw { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); padding: 0; position: relative; }
+  .sw.on::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--gold); }
+  .sw input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
+  .switch { width: 46px; height: 28px; border-radius: 14px; border: 0; background: var(--line); position: relative; flex: none; transition: .2s; }
+  .switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: .2s var(--ease); }
+  .switch.on { background: var(--gold); }
+  .switch.on::after { transform: translateX(18px); }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+
+  /* ---------- xuất ảnh ---------- */
+  .modal { position: fixed; inset: 0; z-index: 60; background: rgba(26, 22, 20, .55); display: none; align-items: flex-end; }
+  .modal.open { display: flex; }
+  .mbox { width: 100%; background: var(--cream); border-radius: 22px 22px 0 0; padding: 18px 16px calc(var(--safe-b) + 16px); animation: up .3s var(--ease); }
+  @keyframes up { from { transform: translateY(40px); opacity: 0; } }
+  .mbox h3 { margin: 0 0 4px; font-size: 17px; }
+  .mbox .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+  .mbox .tip { font-size: 12.5px; background: var(--cream-2); border-radius: 12px; padding: 9px 12px; margin: -4px 0 12px; line-height: 1.5; }
+  .mbox .tip b { color: var(--gold-dark); }
+  .rs-done { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 52vh; overflow-y: auto; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
+  .rs-done img { width: 100%; display: block; border-radius: 8px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+  .mbox .pv { -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+  .mbox .pv { display: block; max-width: 100%; max-height: 42vh; margin: 0 auto 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .15); }
+  .mbox .acts { display: flex; gap: 8px; }
+  .mbox .acts .btn { flex: 1; height: 46px; justify-content: center; font-size: 14px; border-radius: 23px; }
+  .busy { position: fixed; inset: 0; z-index: 70; background: rgba(250, 249, 247, .82); display: none; place-content: center; text-align: center; gap: 12px; font-weight: 500; }
+  .busy.open { display: grid; }
+  .spin { width: 34px; height: 34px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--gold); animation: sp 0.8s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 54px); transform: translateX(-50%) translateY(10px); z-index: 80; background: var(--esp); color: var(--cream);
+    padding: 9px 16px; border-radius: 20px; font-size: 12.5px; opacity: 0; pointer-events: none; transition: .25s var(--ease); max-width: calc(100% - 32px); text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  .toast { transform: translateX(-50%) translateY(-10px); }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"><i></i><div class="modes" id="modes"><button data-m="col" class="on">Collage</button><button data-m="rs">Thu nhỏ</button></div></div>
+    <button class="btn col-only" id="btnAdd" style="display:none"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M3 8h10"/></svg>Ảnh</button>
+    <button class="btn gold col-only" id="btnSave" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10"/></svg>Lưu ảnh</button>
+  </div>
+
+  <div class="mode on" id="mCol">
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="hint" id="hint"></div>
+    <div class="cellbar" id="cellbar"></div>
+    <div class="empty" id="empty"><button class="big" id="btnPick" style="border-style:dashed"><div class="plus">+</div><b>Chọn ảnh để ghép</b>Tối đa 10 ảnh · ảnh chỉ xử lý trên điện thoại</button></div>
+  </div>
+
+  <div class="sheet">
+    <div class="tabs" id="tabs">
+      <button data-t="lay"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="12" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Bố cục</button>
+      <button data-t="size"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5V2h3M11 2h3v3M14 11v3h-3M5 14H2v-3"/></svg>Khung</button>
+      <button data-t="bg"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor"/></svg>Nền</button>
+      <button data-t="logo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="6" cy="6" r="1.4"/><path d="m2.5 12 3.5-3.5 2.5 2.5 2-2 3 3"/></svg>Logo</button>
+    </div>
+
+    <div class="panel on" id="p-lay">
+      <div class="scroll" id="nums"><span id="presets" style="display:contents"></span></div>
+      <div class="scroll" id="lays"></div>
+      <span id="nVal" hidden></span>
+    </div>
+
+    <div class="panel" id="p-size">
+      <div class="wh">
+        <div><label>Rộng (px)</label><input class="field" id="inW" inputmode="numeric" enterkeyhint="done"></div>
+        <button class="ico" id="btnLink" title="Khoá tỉ lệ"></button>
+        <div><label>Cao (px)</label><input class="field" id="inH" inputmode="numeric" enterkeyhint="done"></div>
+        <button class="ico sq" id="btnSwap" title="Đổi dọc ↔ ngang"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M16 13H5l3 3"/></svg></button>
+      </div>
+      <div class="note" id="sizeNote"></div>
+      <div class="scroll" id="sizes"></div>
+      <div class="grid2">
+        <div class="slider"><div class="top2">Khoảng cách <b id="vSp"></b></div><input type="range" id="rSp" min="0" max="100"></div>
+        <div class="slider"><div class="top2">Lề ngoài <b id="vMg"></b></div><input type="range" id="rMg" min="0" max="100"></div>
+        <div class="slider"><div class="top2">Lề dưới (logo) <b id="vEx"></b></div><input type="range" id="rEx" min="0" max="300" step="5"></div>
+        <div class="slider"><div class="top2">Bo góc <b id="vRd"></b></div><input type="range" id="rRd" min="0" max="100"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-bg">
+      <div class="seg" id="bgType"><button class="chip" data-v="blur">Mờ ảnh</button><button class="chip" data-v="color">Màu trơn</button></div>
+      <div class="lbl" id="bgColLbl">Màu</div>
+      <div class="row" id="bgColors"></div>
+      <div class="slider" id="tintRow"><div class="top2">Làm tối / pha màu <b id="vTint"></b></div><input type="range" id="rTint" min="0" max="95" step="5"></div>
+    </div>
+
+    <div class="panel" id="p-logo">
+      <div class="row" style="justify-content:space-between"><span>Đóng logo</span><button class="switch" id="wmOn"></button></div>
+      <div id="wmProps">
+        <div class="seg" id="wmStyle"><button class="chip" data-v="chu">KỲ ANH STUDIO</button><button class="chip" data-v="k">Chữ K</button><button class="chip" data-v="mine" id="wmMine">+ Logo của bạn</button></div>
+        <div class="seg" id="wmColor"><button class="chip" data-v="white">Trắng</button><button class="chip" data-v="black">Đen</button><button class="chip" data-v="gold">Vàng đồng</button><button class="chip" data-v="original">Màu gốc</button></div>
+        <div class="slider"><div class="top2">Cỡ logo <b id="vWm"></b></div><input type="range" id="rWm" min="5" max="60"></div>
+        <div class="slider"><div class="top2">Độ đậm <b id="vWmOp"></b></div><input type="range" id="rWmOp" min="20" max="100" step="5"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="mode" id="mRs">
+    <div class="rs-list" id="rsList">
+      <div class="empty" id="rsEmpty"><button class="big" id="rsPick"><div class="plus">+</div><b>Chọn ảnh để thu nhỏ</b>Chọn bao nhiêu ảnh cũng được · ra JPG sRGB</button></div>
+      <div class="rs-grid" id="rsGrid"></div>
+    </div>
+    <div class="rs-sheet">
+      <div class="lbl">Cạnh dài <b id="rsVal"></b></div>
+      <div class="scroll" id="rsSizes"></div>
+      <div class="row" style="margin:2px 0">
+        <span style="font-size:12.5px;color:var(--muted)">Tự nhập</span><input class="field sm" id="rsCustom" inputmode="numeric" enterkeyhint="done" placeholder="px">
+        <span style="flex:1"></span>
+        <span style="font-size:12.5px;color:var(--muted)">Chất lượng <b id="rsQVal" style="color:var(--text)"></b></span>
+      </div>
+      <input type="range" id="rsQ" min="60" max="100" step="1">
+      <div class="rs-sum" id="rsSum"></div>
+      <div class="acts"><button class="btn" id="rsAdd">+ Thêm ảnh</button><button class="btn gold" id="rsGo" disabled>Thu nhỏ</button></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileRs" accept="image/*" multiple hidden>
+  <input type="file" id="fileMany" accept="image/*" multiple hidden>
+  <input type="file" id="fileOne" accept="image/*" hidden>
+  <input type="file" id="fileLogo" accept="image/png,image/*" hidden>
+  <div class="ghost" id="ghost"><img alt=""></div>
+  <div class="busy" id="busy"><div class="spin"></div><div id="busyText">Đang ghép ảnh…</div></div>
+  <div class="modal" id="done"><div class="mbox">
+    <h3>Ảnh đã sẵn sàng</h3><div class="sub" id="doneInfo"></div>
+    <img class="pv" id="donePv" alt="">
+    <div class="tip" id="doneTip" hidden><b>Nhấn giữ vào ảnh → "Lưu vào Ảnh"</b> để cất vào thư viện. Mở qua wifi nên iPhone không cho bấm một nút là lưu.</div>
+    <div class="acts"><button class="btn" id="doneClose">Đóng</button><button class="btn gold" id="doneShare">Lưu vào máy</button></div>
+  </div></div>
+  <div class="modal" id="rsDoneM"><div class="mbox">
+    <h3>Lưu ảnh đã thu nhỏ</h3>
+    <div class="tip"><b>Nhấn giữ từng ảnh → "Lưu vào Ảnh"</b>. Mở qua wifi nên iPhone không cho lưu cả loạt bằng một nút — đưa trang lên mạng (https) thì sẽ được.</div>
+    <div class="rs-done" id="rsDoneList"></div>
+    <div class="acts"><button class="btn" id="rsDoneClose">Đóng</button><button class="btn gold" id="rsDoneFiles">Tải hết vào Tệp</button></div>
+  </div></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+                  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* trình duyệt chặn lưu: bỏ qua */ } } };
+  const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); };
+
+  // ---------- bố cục: giống bản máy tính (KAS Image Editor) ----------
+  function balanced(n, k) { const b = Math.floor(n / k), r = n % k; return Array.from({ length: k }, (_, i) => b + (i < r ? 1 : 0)); }
+  function rowsOf(counts, x0 = 0, y0 = 0, w = 1, h = 1) {
+    const out = [], rh = h / counts.length;
+    counts.forEach((c, i) => { for (let j = 0; j < c; j++) out.push([x0 + j * w / c, y0 + i * rh, w / c, rh]); });
+    return out;
+  }
+  const flip = (rects) => rects.map(([x, y, w, h]) => [y, x, h, w]);
+  const _lay = {};
+  function colLayouts(n) {
+    if (_lay[n]) return _lay[n];
+    const L = [], seen = new Set();
+    const add = (r) => { const k = JSON.stringify(r.map((v) => v.map((x) => +x.toFixed(4)))); if (!seen.has(k) && r.length === n) { seen.add(k); L.push(r); } };
+    if (n === 1) add([[0, 0, 1, 1]]);
+    for (let k = 1; k <= Math.min(n, 5); k++) {
+      const c = balanced(n, k);
+      if (Math.max(...c) > 4) continue;
+      add(rowsOf(c)); add(flip(rowsOf(c)));
+      add(rowsOf([...c].reverse())); add(flip(rowsOf([...c].reverse())));
+    }
+    if (n >= 3) {
+      const f = n <= 4 ? 0.5 : 0.6, rest = balanced(n - 1, Math.ceil((n - 1) / 4));
+      add([[0, 0, f, 1], ...flip(rowsOf(rest, 0, f, 1, 1 - f))]);
+      add([[0, 0, 1, f], ...rowsOf(rest, 0, f, 1, 1 - f)]);
+      add([[1 - f, 0, f, 1], ...flip(rowsOf(rest, 0, 0, 1, 1 - f))]);
+      add([...rowsOf(rest, 0, 0, 1, 1 - f), [0, 1 - f, 1, f]]);
+    }
+    const extra = { 4: [[1, 2, 1]], 5: [[2, 1, 2], [1, 3, 1]], 6: [[1, 2, 3], [3, 2, 1]], 7: [[2, 3, 2], [3, 1, 3]],
+                    8: [[3, 2, 3], [2, 4, 2]], 9: [[2, 3, 4], [4, 1, 4]], 10: [[3, 4, 3], [2, 3, 2, 3]] }[n] || [];
+    extra.forEach((c) => { add(rowsOf(c)); add(flip(rowsOf(c))); });
+    if (n === 2) {
+      add([[0, 0, 0.6, 1], [0.6, 0, 0.4, 1]]); add(flip([[0, 0, 0.6, 1], [0.6, 0, 0.4, 1]]));
+      add([[0, 0, 0.4, 1], [0.4, 0, 0.6, 1]]); add(flip([[0, 0, 0.4, 1], [0.4, 0, 0.6, 1]]));
+    }
+    const score = (r) => r.reduce((a, [, , w, h]) => a + Math.abs(Math.log(w / h)), 0) / r.length;
+    L.sort((a, b) => score(a) - score(b));
+    return (_lay[n] = L.slice(0, 12));
+  }
+  function cellBoxes(rects, W, H, sp, mg, ex = 0) {
+    const iw = W - 2 * mg, ih = H - 2 * mg - ex, e = 1e-6;
+    return rects.map(([x, y, w, h]) => {
+      let x0 = mg + x * iw, x1 = mg + (x + w) * iw, y0 = mg + y * ih, y1 = mg + (y + h) * ih;
+      if (x > e) x0 += sp / 2; if (x + w < 1 - e) x1 -= sp / 2;
+      if (y > e) y0 += sp / 2; if (y + h < 1 - e) y1 -= sp / 2;
+      return [x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0)];
+    });
+  }
+  function coverBox(w, h, r, zoom, cx, cy) {
+    let cw, ch;
+    if (w / h > r) { ch = h; cw = h * r; } else { cw = w; ch = w / r; }
+    const z = Math.max(1, zoom || 1);
+    cw /= z; ch /= z;
+    return { left: (w - cw) * cx, top: (h - ch) * cy, cw, ch };
+  }
+
+  // ---------- thiết lập (nhớ trên điện thoại này) ----------
+  // mặc định (30/10/2026): khổ ngang 16:9 1920×1080, khoảng cách / lề / bo góc / làm tối đều 0, không đóng logo
+  const DEF = { n: 4, layout: 0, W: 1920, H: 1080, link: true, spacing: 0, margin: 0, extra: 0, radius: 0,
+                bg: { type: 'color', color: '#ffffff', tint: 0 }, wm: { on: false, style: 'chu', color: 'white', size: 18, opacity: 95 } };
+  const KYANH = { n: 4, layoutRects: [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]], W: 4000, H: 6000,
+                  spacing: 0, margin: 75, extra: 190, radius: 0, bg: { type: 'blur', color: '#1a1614', tint: 70 },
+                  wm: { on: true, style: 'chu', color: 'white', size: 18, opacity: 95 } };
+  const KEY = 'kas-collage-2'; // đổi tên khoá để máy đã dùng bản cũ cũng về mặc định mới
+  const saved = store.get(KEY) || {};
+  DEF.rs = { long: 1920, q: 90 };
+  const S = { ...structuredClone(DEF), ...saved, rs: { ...DEF.rs, ...(saved.rs || {}) }, bg: { ...DEF.bg, ...(saved.bg || {}) }, wm: { ...DEF.wm, ...(saved.wm || {}) } };
+  const save = () => store.set(KEY, S);
+  const SIZES = [['1920x1080', 'Ngang 16:9'], ['1080x1350', 'Facebook 4:5'], ['1080x1080', 'Vuông 1080'], ['1080x1920', 'Story 9:16'], ['2048x2048', 'Vuông 2048'], ['2400x3000', '4:5 lớn'], ['4000x6000', '2:3 in ảnh']];
+  const COLORS = ['#ffffff', '#faf9f7', '#f3efe9', '#b8956e', '#2a2420', '#1a1614', '#000000'];
+  // Safari trên iPhone không vẽ được khung lớn hơn ~16,7 triệu điểm ảnh
+  const MAX_AREA = 16777216;
+
+  // ---------- ảnh ----------
+  let photos = [];            // { id, file, w, h, prev (canvas nhỏ để xem), url (ảnh thu nhỏ) }
+  let slots = [];             // mỗi ô: { id, cx, cy, zoom } hoặc null
+  let sel = -1, nextId = 1, keepEmpty = new Set();
+  const byId = (id) => photos.find((p) => p.id === id);
+
+  function loadImg(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => res({ im, url });
+      im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Không đọc được ảnh')); };
+      im.src = url;
+    });
+  }
+  async function makePhoto(file) {
+    const { im, url } = await loadImg(file);
+    const w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, 1400 / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * k); c.height = Math.round(h * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    const t = document.createElement('canvas'), kt = 200 / Math.max(w, h);
+    t.width = Math.round(w * kt); t.height = Math.round(h * kt);
+    t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+    return { id: nextId++, file, w, h, prev: c, url: t.toDataURL('image/jpeg', 0.8) };
+  }
+  async function addFiles(files, replace) {
+    files = [...files].filter((f) => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+    if (!files.length) return;
+    const room = 10 - (replace ? 0 : photos.length);
+    if (files.length > room) toast(`Mỗi collage tối đa 10 ảnh — lấy ${Math.max(0, room)} ảnh đầu`);
+    files = files.slice(0, Math.max(0, room));
+    busy(true, 'Đang mở ảnh…');
+    const list = [];
+    for (const f of files) {
+      try { list.push(await makePhoto(f)); } catch { toast('Có ảnh không đọc được, đã bỏ qua'); }
+    }
+    busy(false);
+    if (replace) photos = [];
+    photos.push(...list);
+    if (!photos.length) return;
+    autoFill();
+  }
+  // đủ ảnh cho bố cục đang chọn thì giữ bố cục, khác thì lấy bố cục hợp nhất (ảnh dọc vào ô dọc…)
+  function fit(rects, list) {
+    const boxes = cellBoxes(rects, S.W, S.H, 0, 0, 0);
+    const cells = boxes.map(([, , w, h], i) => ({ i, a: w / h })).sort((x, y) => x.a - y.a);
+    const pics = list.map((p) => ({ p, a: p.w / p.h })).sort((x, y) => x.a - y.a);
+    const out = new Array(rects.length).fill(null);
+    let cost = 0;
+    cells.forEach((c, k) => {
+      const pic = pics[k];
+      if (!pic) return;
+      cost += Math.abs(Math.log(c.a / pic.a));
+      out[c.i] = { id: pic.p.id, cx: 0.5, cy: pic.a < c.a ? 0.25 : 0.5, zoom: 1 };
+    });
+    return { cost, slots: out };
+  }
+  function autoFill() {
+    const list = photos.slice(0, 10), n = list.length;
+    keepEmpty = new Set();
+    if (n === S.n) { slots = fit(colLayouts(n)[Math.min(S.layout, colLayouts(n).length - 1)], list).slots; }
+    else {
+      const best = colLayouts(n).map((r, i) => ({ i, ...fit(r, list) })).sort((a, b) => a.cost - b.cost)[0];
+      S.n = n; S.layout = best.i; slots = best.slots;
+    }
+    sel = -1; save(); renderAll();
+  }
+  function syncSlots() {
+    slots = slots.slice(0, S.n).map((s) => (s && byId(s.id) ? s : null));
+    while (slots.length < S.n) slots.push(null);
+    const used = new Set(slots.filter(Boolean).map((s) => s.id));
+    slots = slots.map((s, i) => {
+      if (s || keepEmpty.has(i)) return s;
+      const p = photos.find((x) => !used.has(x.id));
+      if (!p) return null;
+      used.add(p.id);
+      return { id: p.id, cx: 0.5, cy: p.h > p.w ? 0.25 : 0.5, zoom: 1 };
+    });
+  }
+
+  // ---------- vẽ: dùng chung cho xem trước và xuất ----------
+  const LOGO = {};
+  ['chu', 'k'].forEach((k) => { const im = new Image(); im.onload = () => { LOGO[k] = im; paint(); }; im.src = k === 'chu' ? 'logo-chu.png' : 'logo-k.png'; });
+  // logo riêng chọn từ điện thoại: lưu luôn trên máy (PNG nền trong suốt là đẹp nhất)
+  function setMineLogo(url) {
+    const im = new Image();
+    im.onload = () => { LOGO.mine = im; Object.keys(tintedLogo).forEach((k) => k.startsWith('mine') && delete tintedLogo[k]); renderLogo(); paint(); };
+    im.src = url;
+  }
+  const savedLogo = store.get('kas-collage-logo');
+  if (savedLogo) setMineLogo(savedLogo);
+  const WM_COL = { white: '#ffffff', black: '#1a1a1a', gold: '#b8956e' };
+  function tintedLogo(style, color) {
+    const im = LOGO[style];
+    if (!im) return null;
+    const key = style + color;
+    if (tintedLogo[key]) return tintedLogo[key];
+    const c = document.createElement('canvas');
+    c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    if (color === 'original') return (tintedLogo[key] = c);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = WM_COL[color] || '#fff'; x.fillRect(0, 0, c.width, c.height);
+    return (tintedLogo[key] = c);
+  }
+  function rrect(ctx, l, t, w, h, r) {
+    ctx.beginPath();
+    if (r <= 0) { ctx.rect(l, t, w, h); return; }
+    ctx.moveTo(l + r, t); ctx.arcTo(l + w, t, l + w, t + h, r); ctx.arcTo(l + w, t + h, l, t + h, r);
+    ctx.arcTo(l, t + h, l, t, r); ctx.arcTo(l, t, l + w, t, r); ctx.closePath();
+  }
+  // nền mờ: thu nhỏ thật nhỏ rồi phóng to lại (chạy được trên mọi điện thoại, không cần bộ lọc blur)
+  function blurBg(ctx, W, H, p) {
+    const src = p.prev, r = W / H;
+    const b = coverBox(src.width, src.height, r, 1, 0.5, 0.5);
+    const s1 = document.createElement('canvas'); s1.width = Math.max(4, Math.round(W / 40)); s1.height = Math.max(4, Math.round(H / 40));
+    const x1 = s1.getContext('2d'); x1.imageSmoothingQuality = 'high';
+    x1.drawImage(src, b.left, b.top, b.cw, b.ch, 0, 0, s1.width, s1.height);
+    const s2 = document.createElement('canvas'); s2.width = s1.width * 4; s2.height = s1.height * 4;
+    const x2 = s2.getContext('2d'); x2.imageSmoothingQuality = 'high'; x2.drawImage(s1, 0, 0, s2.width, s2.height);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(s2, 0, 0, W, H);
+  }
+  // getSrc(photo) trả về ảnh để vẽ (bản nhỏ khi xem, bản gốc khi xuất)
+  async function render(ctx, W, H, getSrc, preview) {
+    const short = Math.min(W, H);
+    const boxes = cellBoxes(curRects(), W, H, S.spacing / 1000 * short, S.margin / 1000 * short, S.extra / 1000 * short);
+    const first = slots.map((s) => s && byId(s.id)).find(Boolean);
+    ctx.save();
+    if (S.bg.type === 'blur' && first) {
+      blurBg(ctx, W, H, first);
+      if (S.bg.tint > 0) { ctx.globalAlpha = S.bg.tint / 100; ctx.fillStyle = S.bg.color; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+    } else { ctx.fillStyle = S.bg.type === 'blur' ? '#1a1614' : S.bg.color; ctx.fillRect(0, 0, W, H); }
+    for (let i = 0; i < boxes.length; i++) {
+      const [x, y, w, h] = boxes[i], s = slots[i], p = s && byId(s.id);
+      const r = (S.radius / 100) * Math.min(w, h) / 2;
+      ctx.save();
+      rrect(ctx, x, y, w, h, r); ctx.clip();
+      if (p) {
+        const src = await getSrc(p), sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+        const b = coverBox(sw, sh, w / h, s.zoom, s.cx, s.cy);
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(src, b.left, b.top, b.cw, b.ch, x, y, w, h);
+      } else if (preview) {
+        ctx.fillStyle = 'rgba(139,129,120,.22)'; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = 'rgba(42,36,32,.55)'; ctx.font = `600 ${Math.max(10, short / 18)}px "Be Vietnam Pro", sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', x + w / 2, y + h / 2);
+      }
+      ctx.restore();
+    }
+    // logo: có lề dưới thêm thì nằm giữa khoảng lề dưới, không thì sát đáy
+    const lg = S.wm.on && tintedLogo(S.wm.style, S.wm.color);
+    if (lg) {
+      const lw = short * S.wm.size / 100, lh = lw * lg.height / lg.width;
+      const band = (S.margin + S.extra) / 1000 * short;
+      const cy = S.extra > 0 ? H - band / 2 : H - lh / 2 - short * 0.04;
+      ctx.globalAlpha = S.wm.opacity / 100;
+      ctx.drawImage(lg, (W - lw) / 2, cy - lh / 2, lw, lh);
+      ctx.globalAlpha = 1;
+    }
+    if (preview && sel >= 0 && boxes[sel]) {
+      const [x, y, w, h] = boxes[sel];
+      ctx.strokeStyle = '#b8956e'; ctx.lineWidth = Math.max(2, short / 160);
+      ctx.strokeRect(x + ctx.lineWidth / 2, y + ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
+    }
+    ctx.restore();
+    return boxes;
+  }
+  function curRects() { const L = colLayouts(S.n); return L[Math.min(S.layout, L.length - 1)]; }
+
+  // ---------- xem trước ----------
+  const cv = $('#cv');
+  let view = { k: 1, boxes: [] }, painting = false, again = false;
+  function fitCanvas() {
+    const st = $('#stage'), aw = st.clientWidth - 24, ah = st.clientHeight - 16;
+    const k = Math.min(aw / S.W, ah / S.H), dpr = Math.min(3, window.devicePixelRatio || 1);
+    const cw = Math.max(40, Math.floor(S.W * k)), ch = Math.max(40, Math.floor(S.H * k));
+    cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+    cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+    view.k = cv.width / S.W;
+  }
+  async function paint() {
+    if (!photos.length) return;
+    if (painting) { again = true; return; }
+    painting = true;
+    do {
+      again = false;
+      syncSlots();
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.setTransform(view.k, 0, 0, view.k, 0, 0);
+      view.boxes = await render(ctx, S.W, S.H, (p) => p.prev, true);
+    } while (again);
+    painting = false;
+  }
+
+  // ---------- chạm trên khung: kéo = dời ảnh, 2 ngón = phóng to, giữ lâu rồi kéo = đổi chỗ / kéo ra ngoài = bỏ ----------
+  const pts = new Map();
+  let g = null;
+  const toCanvas = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * S.W, y: (e.clientY - r.top) / r.height * S.H, out: e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom }; };
+  const hit = (pt) => view.boxes.findIndex(([x, y, w, h]) => pt.x >= x && pt.x <= x + w && pt.y >= y && pt.y <= y + h);
+  const ghost = $('#ghost');
+  cv.addEventListener('pointerdown', (e) => {
+    if (sheet.classList.contains('open')) openTab(null);
+    hideHint();
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { cv.setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
+    if (pts.size === 2 && g && g.cell >= 0 && slots[g.cell]) { // ngón thứ hai: chuyển sang phóng to
+      clearTimeout(g.timer); g.swap = false; ghost.style.display = 'none';
+      const [a, b] = [...pts.values()];
+      g.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: slots[g.cell].zoom };
+      return;
+    }
+    if (pts.size > 1) return;
+    const pt = toCanvas(e), cell = hit(pt), s = slots[cell];
+    g = { cell, x: e.clientX, y: e.clientY, moved: false, swap: false, cx: s && s.cx, cy: s && s.cy };
+    if (s) g.timer = setTimeout(() => { // giữ ~0,35 giây: cầm ảnh lên
+      if (!g || g.moved) return;
+      g.swap = true;
+      ghost.querySelector('img').src = byId(s.id).url;
+      Object.assign(ghost.style, { display: 'block', left: e.clientX + 'px', top: e.clientY + 'px' });
+      if (navigator.vibrate) navigator.vibrate(12);
+    }, 350);
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId) || !g) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const s = slots[g.cell];
+    if (g.pinch && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      s.zoom = Math.min(5, Math.max(1, g.pinch.zoom * Math.hypot(a.x - b.x, a.y - b.y) / g.pinch.d));
+      paint(); return;
+    }
+    if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) > 6) g.moved = true;
+    if (!g.moved || !s) return;
+    if (g.swap) {
+      Object.assign(ghost.style, { left: e.clientX + 'px', top: e.clientY + 'px' });
+      ghost.classList.toggle('del', toCanvas(e).out);
+      return;
+    }
+    clearTimeout(g.timer);
+    const p = byId(s.id), [, , w, h] = view.boxes[g.cell];
+    const b = coverBox(p.w, p.h, w / h, s.zoom, 0, 0), r = cv.getBoundingClientRect();
+    const k = S.W / r.width; // px màn hình → px ảnh ra
+    const clamp = (v) => Math.min(1, Math.max(0, v));
+    if (p.w - b.cw > 0.5) s.cx = clamp(g.cx - (e.clientX - g.x) * k / w * b.cw / (p.w - b.cw));
+    if (p.h - b.ch > 0.5) s.cy = clamp(g.cy - (e.clientY - g.y) * k / h * b.ch / (p.h - b.ch));
+    paint();
+  });
+  function up(e) {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (!g) return;
+    if (g.pinch) { if (!pts.size) { g = null; save(); } return; }
+    clearTimeout(g.timer);
+    const done = g; g = null;
+    if (done.swap) {
+      ghost.style.display = 'none'; ghost.classList.remove('del');
+      const pt = toCanvas(e), j = hit(pt);
+      if (pt.out) { slots[done.cell] = null; keepEmpty.add(done.cell); sel = done.cell; toast('Đã bỏ ảnh khỏi ô ' + (done.cell + 1)); }
+      else if (j >= 0 && j !== done.cell) { [slots[done.cell], slots[j]] = [slots[j], slots[done.cell]]; keepEmpty.delete(j); sel = j; }
+      renderCellbar(); paint(); return;
+    }
+    if (!done.moved && done.cell >= 0) { // chạm nhẹ: chọn ô; ô trống thì mở chọn ảnh
+      sel = done.cell;
+      if (!slots[sel]) { pickInto(sel); }
+      renderCellbar(); paint();
+    }
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+
+  function pickInto(i) {
+    const free = photos.find((p) => !slots.some((s) => s && s.id === p.id));
+    if (free) { slots[i] = { id: free.id, cx: 0.5, cy: free.h > free.w ? 0.25 : 0.5, zoom: 1 }; keepEmpty.delete(i); paint(); renderCellbar(); return; }
+    $('#fileOne').dataset.cell = i; $('#fileOne').click();
+  }
+  $('#fileOne').addEventListener('change', async (e) => {
+    const f = e.target.files[0], i = +e.target.dataset.cell;
+    e.target.value = '';
+    if (!f) return;
+    busy(true, 'Đang mở ảnh…');
+    try {
+      const p = await makePhoto(f);
+      const old = slots[i];
+      if (old) photos = photos.filter((x) => x.id !== old.id || slots.some((s, k) => k !== i && s && s.id === old.id));
+      photos.push(p);
+      slots[i] = { id: p.id, cx: 0.5, cy: p.h > p.w ? 0.25 : 0.5, zoom: 1 }; keepEmpty.delete(i);
+    } catch { toast('Không đọc được ảnh này'); }
+    busy(false); renderAll();
+  });
+
+  function renderCellbar() {
+    const bar = $('#cellbar');
+    bar.innerHTML = '';
+    if (sel < 0 || !photos.length) return;
+    const s = slots[sel];
+    const mk = (t, fn) => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = t; b.onclick = fn; bar.append(b); };
+    mk(s ? 'Thay ảnh' : 'Thêm ảnh', () => { $('#fileOne').dataset.cell = sel; $('#fileOne').click(); });
+    if (s) {
+      mk('Về giữa', () => { Object.assign(s, { cx: 0.5, cy: 0.5, zoom: 1 }); paint(); });
+      mk('Bỏ ảnh', () => { slots[sel] = null; keepEmpty.add(sel); renderCellbar(); paint(); });
+    }
+    mk('✓', () => { sel = -1; renderCellbar(); paint(); });
+  }
+
+  // ---------- bảng chỉnh ----------
+  // bảng chỉnh mặc định thu gọn chỉ còn hàng tab; bấm tab mở, bấm lại (hoặc chạm vào khung ảnh) thì thu
+  const sheet = document.querySelector('.sheet');
+  function openTab(t) {
+    const open = t && !(sheet.classList.contains('open') && document.querySelector(`#tabs [data-t="${t}"]`).classList.contains('on'));
+    sheet.classList.toggle('open', !!open);
+    document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', open && x.dataset.t === t));
+    document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'p-' + t));
+    requestAnimationFrame(() => { if (photos.length) { fitCanvas(); paint(); } });
+  }
+  $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) openTab(b.dataset.t); });
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const isKyAnh = () => S.n === 4 && same(curRects(), KYANH.layoutRects) && S.W === KYANH.W && S.H === KYANH.H && S.spacing === KYANH.spacing
+    && S.margin === KYANH.margin && S.extra === KYANH.extra && S.bg.type === 'blur' && S.wm.on;
+  function renderPresets() {
+    const box = $('#presets'); box.innerHTML = '';
+    const b = document.createElement('button');
+    b.className = 'chip preset' + (isKyAnh() ? ' on' : ''); b.textContent = '★ KAS 01';
+    b.onclick = () => {
+      const li = colLayouts(4).findIndex((r) => same(r, KYANH.layoutRects));
+      Object.assign(S, structuredClone({ ...KYANH, layoutRects: undefined }), { layout: Math.max(0, li) });
+      delete S.layoutRects;
+      if (photos.length === 4) slots = fit(curRects(), photos).slots;
+      keepEmpty = new Set(); save(); renderAll();
+      toast('Đã áp KAS 01: 2×2, khổ 4000×6000, nền mờ, logo dưới');
+    };
+    box.append(b);
+  }
+  function renderLayout() {
+    $('#nVal').textContent = `${S.n} ô`;
+    const nums = $('#nums'), pre = $('#presets'); nums.innerHTML = ''; nums.append(pre);
+    for (let i = 1; i <= 10; i++) {
+      const b = document.createElement('button'); b.className = 'num' + (i === S.n ? ' on' : ''); b.textContent = i;
+      b.onclick = () => { S.n = i; S.layout = 0; keepEmpty = new Set(); save(); renderAll(); };
+      nums.append(b);
+    }
+    const lays = $('#lays'); lays.innerHTML = '';
+    const r = S.W / S.H, bw = r >= 1 ? 58 : 58 * r, bh = r >= 1 ? 58 / r : 58;
+    colLayouts(S.n).forEach((rects, li) => {
+      const b = document.createElement('button');
+      b.className = 'lay' + (li === Math.min(S.layout, colLayouts(S.n).length - 1) ? ' on' : '');
+      b.style.width = bw + 'px'; b.style.height = bh + 'px';
+      rects.forEach(([x, y, w, h]) => { const c = document.createElement('i'); Object.assign(c.style, { left: x * 100 + '%', top: y * 100 + '%', width: w * 100 + '%', height: h * 100 + '%' }); b.append(c); });
+      b.onclick = () => {
+        S.layout = li;
+        const used = slots.filter(Boolean).map((s) => byId(s.id)).filter(Boolean);
+        if (used.length) slots = fit(rects, used).slots;
+        save(); renderAll();
+      };
+      lays.append(b);
+    });
+  }
+  const CHAIN_ON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-1 1M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l1-1"/></svg>';
+  const CHAIN_OFF = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12.7 7.3l1.6-1.6a2.5 2.5 0 0 0-3.5-3.5L9.2 3.8M7.3 12.7l-1.6 1.6a2.5 2.5 0 0 0 3.5 3.5l1.6-1.6M4 4l12 12"/></svg>';
+  function renderSize() {
+    if (document.activeElement !== $('#inW')) $('#inW').value = S.W;
+    if (document.activeElement !== $('#inH')) $('#inH').value = S.H;
+    $('#btnLink').classList.toggle('on', S.link); $('#btnLink').innerHTML = S.link ? CHAIN_ON : CHAIN_OFF;
+    const big = S.W * S.H > MAX_AREA, k = Math.sqrt(MAX_AREA / (S.W * S.H));
+    const g2 = (a, b) => (b ? g2(b, a % b) : a), d = g2(S.W, S.H);
+    $('#sizeNote').className = 'note' + (big ? ' warn' : '');
+    $('#sizeNote').textContent = big
+      ? `Quá sức điện thoại → xuất ${Math.floor(S.W * k)} × ${Math.floor(S.H * k)} px, cùng tỉ lệ`
+      : `Ảnh ra đúng ${S.W} × ${S.H} px · tỉ lệ ${S.W / d}:${S.H / d}`;
+    const box = $('#sizes'); box.innerHTML = '';
+    SIZES.forEach(([v, t]) => {
+      const [w, h] = v.split('x').map(Number), b = document.createElement('button');
+      b.className = 'chip' + (w === S.W && h === S.H ? ' on' : ''); b.textContent = t;
+      b.onclick = () => { S.W = w; S.H = h; save(); renderAll(); };
+      box.append(b);
+    });
+    [['#rSp', 'spacing', '#vSp'], ['#rMg', 'margin', '#vMg'], ['#rEx', 'extra', '#vEx'], ['#rRd', 'radius', '#vRd']].forEach(([id, k2, v]) => {
+      $(id).value = S[k2]; fill($(id)); $(v).textContent = S[k2];
+    });
+  }
+  const fill = (el) => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%');
+  function setDim(which, raw) {
+    const v = Math.round(parseFloat(String(raw).replace(',', '.')));
+    if (!(v >= 100 && v <= 12000)) return false;
+    const r = S.W / S.H;
+    if (which === 'W') { S.W = v; if (S.link) S.H = Math.max(100, Math.round(v / r)); }
+    else { S.H = v; if (S.link) S.W = Math.max(100, Math.round(v * r)); }
+    return true;
+  }
+  ['W', 'H'].forEach((k) => {
+    const el = $('#in' + k), other = $('#in' + (k === 'W' ? 'H' : 'W'));
+    el.addEventListener('input', () => {
+      const v = Math.round(parseFloat(el.value.replace(',', '.')));
+      if (S.link && v >= 100) other.value = k === 'W' ? Math.round(v / (S.W / S.H)) : Math.round(v * (S.W / S.H));
+    });
+    el.addEventListener('change', () => { if (!setDim(k, el.value)) toast('Mỗi cạnh từ 100 đến 12000 px'); save(); renderAll(); });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.blur(); });
+  });
+  $('#btnLink').onclick = () => { S.link = !S.link; save(); renderSize(); toast(S.link ? 'Khoá tỉ lệ: đổi rộng thì cao tự đổi theo' : 'Mở khoá: chỉnh rộng / cao riêng'); };
+  $('#btnSwap').onclick = () => { [S.W, S.H] = [S.H, S.W]; save(); renderAll(); };
+  [['#rSp', 'spacing', '#vSp'], ['#rMg', 'margin', '#vMg'], ['#rEx', 'extra', '#vEx'], ['#rRd', 'radius', '#vRd']].forEach(([id, k, v]) => {
+    $(id).addEventListener('input', (e) => { S[k] = +e.target.value; fill(e.target); $(v).textContent = S[k]; paint(); });
+    $(id).addEventListener('change', save);
+  });
+
+  function renderBg() {
+    document.querySelectorAll('#bgType button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.bg.type));
+    $('#bgColLbl').textContent = S.bg.type === 'blur' ? 'Màu làm tối / pha' : 'Màu nền';
+    const box = $('#bgColors'); box.innerHTML = '';
+    COLORS.forEach((c) => {
+      const b = document.createElement('button'); b.className = 'sw' + (c === S.bg.color ? ' on' : ''); b.style.background = c;
+      b.onclick = () => { S.bg.color = c; save(); renderBg(); paint(); };
+      box.append(b);
+    });
+    const own = document.createElement('label'); own.className = 'sw' + (COLORS.includes(S.bg.color) ? '' : ' on');
+    own.style.background = COLORS.includes(S.bg.color) ? 'conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)' : S.bg.color;
+    own.innerHTML = '<input type="color">'; own.querySelector('input').value = S.bg.color;
+    own.querySelector('input').addEventListener('input', (e) => { S.bg.color = e.target.value; own.style.background = S.bg.color; paint(); });
+    own.querySelector('input').addEventListener('change', () => { save(); renderBg(); });
+    box.append(own);
+    $('#tintRow').style.display = S.bg.type === 'blur' ? '' : 'none';
+    $('#rTint').value = S.bg.tint; fill($('#rTint')); $('#vTint').textContent = S.bg.tint + '%';
+  }
+  $('#bgType').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.bg.type = b.dataset.v; save(); renderBg(); paint(); renderPresets(); });
+  $('#rTint').addEventListener('input', (e) => { S.bg.tint = +e.target.value; fill(e.target); $('#vTint').textContent = S.bg.tint + '%'; paint(); });
+  $('#rTint').addEventListener('change', save);
+
+  function renderLogo() {
+    $('#wmOn').classList.toggle('on', S.wm.on);
+    $('#wmProps').style.display = S.wm.on ? '' : 'none';
+    document.querySelectorAll('#wmStyle button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.wm.style));
+    $('#wmMine').textContent = LOGO.mine ? (S.wm.style === 'mine' ? 'Logo của bạn · đổi' : 'Logo của bạn') : '+ Logo của bạn';
+    document.querySelectorAll('#wmColor button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.wm.color));
+    $('#rWm').value = S.wm.size; fill($('#rWm')); $('#vWm').textContent = S.wm.size + '%';
+    $('#rWmOp').value = S.wm.opacity; fill($('#rWmOp')); $('#vWmOp').textContent = S.wm.opacity + '%';
+  }
+  $('#wmOn').onclick = () => { S.wm.on = !S.wm.on; save(); renderLogo(); renderPresets(); paint(); };
+  $('#wmStyle').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    // "Logo của bạn": chưa có hoặc bấm lại khi đang chọn thì mở thư viện để chọn / đổi logo
+    if (b.dataset.v === 'mine' && (!LOGO.mine || S.wm.style === 'mine')) { $('#fileLogo').click(); return; }
+    S.wm.style = b.dataset.v; save(); renderLogo(); paint();
+  });
+  $('#fileLogo').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try {
+      const { im, url } = await loadImg(f);
+      const k = Math.min(1, 1200 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      const data = c.toDataURL('image/png');
+      store.set('kas-collage-logo', data);
+      S.wm.style = 'mine'; S.wm.color = 'original'; S.wm.on = true; save();
+      setMineLogo(data);
+      toast('Đã nhận logo — bấm lại "Logo của bạn" để đổi logo khác');
+    } catch { toast('Không đọc được ảnh logo này'); }
+  });
+  $('#wmColor').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.wm.color = b.dataset.v; save(); renderLogo(); paint(); });
+  $('#rWm').addEventListener('input', (e) => { S.wm.size = +e.target.value; fill(e.target); $('#vWm').textContent = S.wm.size + '%'; paint(); });
+  $('#rWmOp').addEventListener('input', (e) => { S.wm.opacity = +e.target.value; fill(e.target); $('#vWmOp').textContent = S.wm.opacity + '%'; paint(); });
+  ['#rWm', '#rWmOp'].forEach((id) => $(id).addEventListener('change', save));
+
+  let hintT = 0;
+  function showHint(has) {
+    const seen = store.get('kas-collage-hint') || 0;
+    if (!has || seen >= 3 || showHint.done) return;
+    showHint.done = true; store.set('kas-collage-hint', seen + 1);
+    $('#hint').textContent = 'Kéo: dời ảnh · 2 ngón: phóng to · giữ rồi kéo: đổi chỗ / kéo ra ngoài để bỏ';
+    clearTimeout(hintT); hintT = setTimeout(hideHint, 6000);
+  }
+  function hideHint() { $('#hint').textContent = ''; }
+  function renderAll() {
+    const has = photos.length > 0;
+    $('#empty').style.display = has ? 'none' : '';
+    cv.style.display = has ? '' : 'none';
+    $('#btnAdd').style.display = has ? '' : 'none';
+    $('#btnSave').disabled = !has;
+    showHint(has);
+    renderLayout(); renderPresets(); renderSize(); renderBg(); renderLogo(); renderCellbar();
+    if (has) { fitCanvas(); paint(); }
+  }
+
+  // ---------- chọn ảnh ----------
+  $('#btnPick').onclick = () => { $('#fileMany').dataset.replace = '1'; $('#fileMany').click(); };
+  $('#btnAdd').onclick = () => {
+    if (photos.length >= 10) { toast('Đã đủ 10 ảnh — kéo ảnh ra ngoài khung để bỏ bớt'); }
+    $('#fileMany').dataset.replace = photos.length >= 10 ? '1' : ''; $('#fileMany').click();
+  };
+  $('#fileMany').addEventListener('change', (e) => { const f = [...e.target.files]; e.target.value = ''; addFiles(f, e.target.dataset.replace === '1'); });
+
+  // ---------- xuất ảnh: vẽ lại bằng ảnh gốc, từng ảnh một cho nhẹ máy ----------
+  function busy(on, t) { $('#busy').classList.toggle('open', on); if (t) $('#busyText').textContent = t; }
+  let outFile = null, outUrl = '';
+  $('#btnSave').onclick = async () => {
+    let W = S.W, H = S.H;
+    if (W * H > MAX_AREA) { const k = Math.sqrt(MAX_AREA / (W * H)); W = Math.floor(W * k); H = Math.floor(H * k); }
+    busy(true, 'Đang ghép ảnh…');
+    await new Promise((r) => setTimeout(r, 30));
+    try {
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      const opened = [];
+      await render(ctx, W, H, async (p) => { const { im, url } = await loadImg(p.file); opened.push(url); return im; }, false);
+      opened.forEach((u) => URL.revokeObjectURL(u));
+      const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.92));
+      c.width = c.height = 1; // trả bộ nhớ cho điện thoại
+      if (!blob) throw new Error('Điện thoại không đủ bộ nhớ để xuất khung này');
+      const d = new Date(), z = (v) => String(v).padStart(2, '0');
+      const name = `KAS-collage-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.jpg`;
+      outFile = new File([blob], name, { type: 'image/jpeg' });
+      if (outUrl) URL.revokeObjectURL(outUrl);
+      outUrl = URL.createObjectURL(blob);
+      $('#donePv').src = outUrl;
+      $('#doneInfo').textContent = `${W} × ${H} px · ${(blob.size / 1048576).toFixed(2)} MB · JPG`;
+      const canShare = !!(navigator.canShare && navigator.canShare({ files: [outFile] }));
+      $('#doneShare').textContent = canShare ? 'Lưu / gửi ảnh' : 'Tải vào Tệp';
+      $('#doneTip').hidden = canShare;
+      $('#done').classList.add('open');
+    } catch (err) { toast(err.message || 'Không xuất được ảnh'); }
+    busy(false);
+  };
+  $('#doneShare').onclick = async () => {
+    if (!outFile) return;
+    if (navigator.canShare && navigator.canShare({ files: [outFile] })) {
+      try { await navigator.share({ files: [outFile] }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a'); a.href = outUrl; a.download = outFile.name; document.body.append(a); a.click(); a.remove();
+  };
+  $('#doneClose').onclick = () => $('#done').classList.remove('open');
+
+  window.addEventListener('resize', () => { if (photos.length) { fitCanvas(); paint(); } });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (photos.length) { fitCanvas(); paint(); } }).observe($('#stage'));
+  if (document.fonts) document.fonts.ready.then(() => photos.length && paint());
+  renderAll();
+  // =================== THU NHỎ HÀNG LOẠT ===================
+  // Mỗi ảnh: mở → thu cạnh dài về S.rs.long (ảnh nhỏ hơn thì giữ nguyên, không phóng to) → JPG. Làm lần lượt từng ảnh cho nhẹ máy.
+  const RS_SIZES = [[1920, 'FHD 1920'], [2048, '2048'], [1080, '1080'], [1440, '1440'], [2560, '2K 2560'], [3840, '4K 3840']];
+  let rsItems = [], rsOut = [];
+  function setMode(m) {
+    document.body.classList.toggle('rs', m === 'rs');
+    document.querySelectorAll('#modes button').forEach((b) => b.classList.toggle('on', b.dataset.m === m));
+    $('#mCol').classList.toggle('on', m !== 'rs'); $('#mRs').classList.toggle('on', m === 'rs');
+    store.set('kas-mode', m);
+    if (m === 'rs') renderRs(); else if (photos.length) { fitCanvas(); paint(); }
+  }
+  $('#modes').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setMode(b.dataset.m); });
+  const outDims = (w, h) => { const k = Math.min(1, S.rs.long / Math.max(w, h)); return [Math.round(w * k), Math.round(h * k)]; };
+  const mb = (b) => (b / 1048576).toFixed(b < 1048576 ? 2 : 1) + ' MB';
+  function renderRs() {
+    $('#rsVal').textContent = S.rs.long + ' px';
+    const box = $('#rsSizes'); box.innerHTML = '';
+    RS_SIZES.forEach(([v, t]) => {
+      const b = document.createElement('button'); b.className = 'chip' + (v === S.rs.long ? ' on' : ''); b.textContent = t;
+      b.onclick = () => { S.rs.long = v; $('#rsCustom').value = ''; rsItems.forEach((x) => { x.out = null; }); save(); renderRs(); };
+      box.append(b);
+    });
+    if (document.activeElement !== $('#rsCustom')) $('#rsCustom').value = RS_SIZES.some(([v]) => v === S.rs.long) ? '' : S.rs.long;
+    $('#rsQ').value = S.rs.q; fill($('#rsQ')); $('#rsQVal').textContent = S.rs.q;
+    $('#rsEmpty').style.display = rsItems.length ? 'none' : '';
+    const grid = $('#rsGrid'); grid.innerHTML = '';
+    rsItems.forEach((it, i) => {
+      const d = document.createElement('div'); d.className = 'rs-it' + (it.out ? ' ok' : '') + (it.err ? ' err' : '');
+      const [ow, oh] = outDims(it.w, it.h);
+      d.innerHTML = '<img alt=""><button class="x">×</button><div class="cap"></div>';
+      d.querySelector('img').src = it.thumb;
+      d.querySelector('.cap').innerHTML = it.err ? 'Không đọc được' : it.out ? `<b>${ow}×${oh}</b> · ${mb(it.out.size)}` : `${it.w}×${it.h} → <b>${ow}×${oh}</b>`;
+      d.querySelector('.x').onclick = () => { rsItems.splice(i, 1); rsOut = []; renderRs(); };
+      grid.append(d);
+    });
+    const done = rsItems.filter((x) => x.out).length;
+    $('#rsSum').textContent = rsItems.length ? `${rsItems.length} ảnh · gốc ${mb(rsItems.reduce((a, x) => a + x.file.size, 0))}`
+      + (done ? ` → ${mb(rsItems.reduce((a, x) => a + (x.out ? x.out.size : 0), 0))}` : '') : '';
+    $('#rsGo').disabled = !rsItems.length;
+    $('#rsGo').textContent = rsItems.length ? (done === rsItems.length ? `Lưu ${done} ảnh` : `Thu nhỏ ${rsItems.length} ảnh`) : 'Thu nhỏ';
+  }
+  async function rsAddFiles(files) {
+    files = [...files].filter((f) => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+    if (!files.length) return;
+    busy(true, 'Đang mở ảnh…');
+    for (let i = 0; i < files.length; i++) {
+      $('#busyText').textContent = `Đang mở ảnh ${i + 1}/${files.length}…`;
+      try {
+        const { im, url } = await loadImg(files[i]);
+        const w = im.naturalWidth, h = im.naturalHeight, t = document.createElement('canvas'), k = 240 / Math.max(w, h);
+        t.width = Math.round(w * k); t.height = Math.round(h * k);
+        t.getContext('2d').drawImage(im, 0, 0, t.width, t.height);
+        URL.revokeObjectURL(url);
+        rsItems.push({ file: files[i], w, h, thumb: t.toDataURL('image/jpeg', 0.7), out: null });
+      } catch { toast('Có ảnh không đọc được, đã bỏ qua'); }
+    }
+    busy(false);
+    rsItems.forEach((x) => { x.out = null; }); rsOut = [];
+    renderRs();
+  }
+  // thu nhỏ từng nửa một cho ảnh mịn (vẽ thẳng từ 4000px xuống 1920px trên Safari dễ bị răng cưa)
+  function downscale(im, W, H) {
+    let src = im, sw = im.naturalWidth || im.width, sh = im.naturalHeight || im.height;
+    while (sw / 2 >= W && sh / 2 >= H) {
+      const c = document.createElement('canvas'); c.width = Math.round(sw / 2); c.height = Math.round(sh / 2);
+      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+      if (src !== im) src.width = src.height = 1;
+      src = c; sw = c.width; sh = c.height;
+    }
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const x = out.getContext('2d'); x.imageSmoothingQuality = 'high';
+    x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); // ảnh PNG trong suốt: lót trắng khi ra JPG
+    x.drawImage(src, 0, 0, W, H);
+    if (src !== im) src.width = src.height = 1;
+    return out;
+  }
+  async function rsRun() {
+    busy(true, 'Đang thu nhỏ…');
+    await new Promise((r) => setTimeout(r, 30));
+    rsOut = [];
+    for (let i = 0; i < rsItems.length; i++) {
+      const it = rsItems[i];
+      $('#busyText').textContent = `Đang thu nhỏ ${i + 1}/${rsItems.length}…`;
+      try {
+        const { im, url } = await loadImg(it.file);
+        const [W, H] = outDims(im.naturalWidth, im.naturalHeight);
+        const c = downscale(im, W, H);
+        URL.revokeObjectURL(url);
+        const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', S.rs.q / 100));
+        c.width = c.height = 1;
+        if (!blob) throw new Error('hết bộ nhớ');
+        const base = it.file.name.replace(/\.[^.]+$/, '') || 'anh';
+        it.out = new File([blob], `${base}-${S.rs.long}.jpg`, { type: 'image/jpeg' }); it.err = false;
+        rsOut.push(it.out);
+      } catch { it.err = true; }
+    }
+    busy(false);
+    renderRs();
+    const bad = rsItems.filter((x) => x.err).length;
+    if (bad) toast(`${bad} ảnh không thu nhỏ được`);
+    // iPhone chỉ cho mở bảng lưu ngay sau một lần chạm, nên xong thì để bạn bấm "Lưu N ảnh"
+    if (rsOut.length) toast(`Xong ${rsOut.length} ảnh — bấm "Lưu ${rsOut.length} ảnh" để cất vào máy`);
+  }
+  let rsUrls = [];
+  async function rsSave() {
+    const files = rsItems.filter((x) => x.out).map((x) => x.out);
+    if (!files.length) return;
+    if (navigator.canShare && navigator.canShare({ files })) {
+      try { await navigator.share({ files }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    // mở qua wifi (http): iPhone không có bảng "Lưu ảnh" → hiện ảnh để nhấn giữ lưu từng tấm
+    rsUrls.forEach((u) => URL.revokeObjectURL(u));
+    rsUrls = files.map((f) => URL.createObjectURL(f));
+    const list = $('#rsDoneList'); list.innerHTML = '';
+    rsUrls.forEach((u) => { const im = new Image(); im.src = u; im.alt = ''; list.append(im); });
+    $('#rsDoneM').classList.add('open');
+  }
+  $('#rsDoneClose').onclick = () => $('#rsDoneM').classList.remove('open');
+  $('#rsDoneFiles').onclick = () => rsDownload(rsItems.filter((x) => x.out).map((x) => x.out));
+  async function rsDownload(files) {
+    for (const f of files) {
+      const u = URL.createObjectURL(f), a = document.createElement('a');
+      a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 4000);
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
+  $('#rsGo').onclick = () => { const all = rsItems.length && rsItems.every((x) => x.out); if (all) rsSave(); else rsRun(); };
+  $('#rsPick').onclick = $('#rsAdd').onclick = () => $('#fileRs').click();
+  $('#fileRs').addEventListener('change', (e) => { const f = [...e.target.files]; e.target.value = ''; rsAddFiles(f); });
+  $('#rsQ').addEventListener('input', (e) => { S.rs.q = +e.target.value; fill(e.target); $('#rsQVal').textContent = S.rs.q; });
+  $('#rsQ').addEventListener('change', () => { save(); rsItems.forEach((x) => { x.out = null; }); renderRs(); });
+  $('#rsCustom').addEventListener('change', (e) => {
+    const v = Math.round(parseFloat(e.target.value));
+    if (!(v >= 100 && v <= 12000)) { if (e.target.value) toast('Cạnh dài từ 100 đến 12000 px'); return; }
+    S.rs.long = v; save(); rsItems.forEach((x) => { x.out = null; }); renderRs();
+  });
+  $('#rsCustom').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+  if (store.get('kas-mode') === 'rs') setMode('rs');
+
+  window.__kas = { S, rsAddFiles, get rsItems() { return rsItems; }, get photos() { return photos; }, get slots() { return slots; }, addFiles }; // để thử nghiệm
+})();
+</script>
+</body>
+</html>
