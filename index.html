@@ -201,7 +201,7 @@
         <button class="ico sq" id="btnSwap" title="Đổi dọc ↔ ngang"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M16 13H5l3 3"/></svg></button>
       </div>
       <div class="note" id="sizeNote"></div>
-      <div class="scroll" id="sizes"></div>
+      <div class="seg" id="sizes" style="margin:4px 0 8px"></div>
       <div class="grid2">
         <div class="slider"><div class="top2">Khoảng cách <b id="vSp"></b></div><input type="range" id="rSp" min="0" max="100"></div>
         <div class="slider"><div class="top2">Lề ngoài <b id="vMg"></b></div><input type="range" id="rMg" min="0" max="100"></div>
@@ -342,7 +342,7 @@
   DEF.rs = { long: 1920, q: 90 };
   const S = { ...structuredClone(DEF), ...saved, rs: { ...DEF.rs, ...(saved.rs || {}) }, bg: { ...DEF.bg, ...(saved.bg || {}) }, wm: { ...DEF.wm, ...(saved.wm || {}) } };
   const save = () => store.set(KEY, S);
-  const SIZES = [['1920x1080', 'Ngang 16:9'], ['1080x1350', 'Facebook 4:5'], ['1080x1080', 'Vuông 1080'], ['1080x1920', 'Story 9:16'], ['2048x2048', 'Vuông 2048'], ['2400x3000', '4:5 lớn'], ['4000x6000', '2:3 in ảnh']];
+  const SIZES = [['1920x1080', 'Ngang 16:9'], ['1080x1440', 'Insta 3:4'], ['1080x1350', 'Insta 4:5'], ['1080x1080', 'Vuông 1080'], ['1080x1920', 'Story 9:16'], ['2048x2048', 'Vuông 2048'], ['2400x3000', '4:5 lớn'], ['4000x6000', '2:3 in ảnh']];
   const COLORS = ['#ffffff', '#faf9f7', '#f3efe9', '#b8956e', '#2a2420', '#1a1614', '#000000'];
   // Safari trên iPhone không vẽ được khung lớn hơn ~16,7 triệu điểm ảnh
   const MAX_AREA = 16777216;
@@ -882,6 +882,9 @@
   };
   $('#doneClose').onclick = () => $('#done').classList.remove('open');
 
+  document.querySelectorAll('.scroll').forEach((el) => el.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) { el.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false }));
   window.addEventListener('resize', () => { if (photos.length) { fitCanvas(); paint(); } });
   if (window.ResizeObserver) new ResizeObserver(() => { if (photos.length) { fitCanvas(); paint(); } }).observe($('#stage'));
   if (document.fonts) document.fonts.ready.then(() => photos.length && paint());
